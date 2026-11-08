@@ -1,0 +1,10 @@
+build/
+build-*/
+coverage-report/
+coverage-report-lcov/
+coverage.out
+coverage.html
+bin/
+*.bin
+db.json
+.vscode/
