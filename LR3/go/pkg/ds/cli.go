@@ -4,11 +4,30 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 func writeLine(writer io.Writer, text string) {
 	_, _ = fmt.Fprintln(writer, text)
+}
+
+func isJSONFile(filename string) bool {
+	return strings.EqualFold(filepath.Ext(filename), ".json")
+}
+
+func loadDatabase(database *Database, filename string) error {
+	if isJSONFile(filename) {
+		return database.LoadFromFile(filename)
+	}
+	return database.LoadBinaryFile(filename)
+}
+
+func saveDatabase(database *Database, filename string) error {
+	if isJSONFile(filename) {
+		return database.SaveToFile(filename)
+	}
+	return database.SaveBinaryFile(filename)
 }
 
 func RunCLI(args []string, stdout, stderr io.Writer) int {
@@ -25,14 +44,14 @@ func RunCLI(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if query == "" {
-		writeLine(stdout, "Usage: dsdb --file <file.json> --query '<COMMAND> [args]'")
+		writeLine(stdout, "Usage: dsdb --file <file.bin|file.json> --query '<COMMAND> [args]'")
 		return 0
 	}
 
 	database := NewDatabase()
 	if filename != "" {
 		if _, err := os.Stat(filename); err == nil {
-			if err := database.LoadFromFile(filename); err != nil {
+			if err := loadDatabase(database, filename); err != nil {
 				writeLine(stderr, "ERROR: "+err.Error())
 				return 2
 			}
@@ -45,7 +64,7 @@ func RunCLI(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	if filename != "" {
-		if err := database.SaveToFile(filename); err != nil {
+		if err := saveDatabase(database, filename); err != nil {
 			writeLine(stderr, "ERROR: "+err.Error())
 			return 2
 		}
