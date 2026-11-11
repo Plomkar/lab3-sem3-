@@ -2,7 +2,8 @@
 
 Абстрактные структуры данных в виде обобщённых типов: `Array`, `ForwardList`, `LinkedList`,
 `Stack`, `Queue`, `HashTable`, `CompleteBinaryTree`, а также `Database` (команды из ЛР1) и консольная утилита `dsdb`.
-Формат сериализации — текстовый (JSON).
+Форматы сериализации: бинарный (файлы `.bin`, формат совпадает с проектом на C++, файлы взаимно читаются) и
+текстовый JSON (файлы `.json`). Формат выбирается по расширению файла.
 
 ## Быстрый старт
 
@@ -33,3 +34,17 @@ go run ./cmd/dsdb --file db.json --query "STATS"
 `LPUSH LPUSH_END LPUSH_AFTER LGET LDEL LDEL_VALUE LSEARCH`, `SPUSH SPOP SPEEK`, `QPUSH QPOP QPEEK`,
 `TINSERT TGET TSEARCH TDEL TFULL THEIGHT TORDER pre|in|post|level`, `HPUT HGET HDEL HHAS HSIZE`,
 `PRINT M|F|L|LR|S|Q|T|H`, `STATS`.
+
+## Сериализация
+
+```
+go run ./cmd/dsdb --file db.bin  --query "MPUSH 5"      # бинарный формат
+go run ./cmd/dsdb --file db.bin  --query "HPUT apple 3"
+xxd db.bin | head                                       # теги DSDB, ARRY, HASH и т.д.
+go run ./cmd/dsdb --file db.json --query "MPUSH 5"      # текстовый формат JSON
+cat db.json
+```
+
+Бинарный формат: заголовок `DSDB` + версия (1 байт), затем блоки `ARRY`, `FLST`, `LLST`, `STCK`, `QUEU`, `CBTR`, `HASH`;
+числа u64 — little-endian, элементы — int32. Реализация: `pkg/ds/binary.go` (`MarshalBinary`, `UnmarshalBinary`,
+`SaveBinaryFile`, `LoadBinaryFile`); JSON — методы `MarshalJSON` / `UnmarshalJSON` у каждого типа и `Database.Marshal`.
